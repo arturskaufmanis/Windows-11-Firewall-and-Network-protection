@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Windows 11 Firewall &amp; Network Protection — Lab Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2230;
+      --border:    #30363d;
+      --accent:    #58a6ff;
+      --accent2:   #3fb950;
+      --warn:      #f0883e;
+      --danger:    #f85149;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --code-bg:   #0d1117;
+      --radius:    8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #1a2236 60%, #0d1a2e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 64px 32px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 600px 300px at 80% 50%, rgba(88,166,255,.07) 0%, transparent 70%),
+        radial-gradient(ellipse 300px 200px at 10% 80%, rgba(63,185,80,.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-inner { max-width: 860px; margin: 0 auto; position: relative; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(88,166,255,.12); border: 1px solid rgba(88,166,255,.3);
+      color: var(--accent); font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 20px; margin-bottom: 20px;
+    }
+    .badge::before { content: '●'; font-size: 8px; color: var(--accent2); }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(26px, 5vw, 42px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -.02em;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .hero h1 span { color: var(--accent); }
+
+    .hero-sub {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .meta-strip {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: var(--muted);
+    }
+    .meta-strip span { display: flex; align-items: center; gap: 5px; }
+    .meta-strip span::before { content: attr(data-icon); font-size: 13px; }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      max-width: 1060px;
+      margin: 0 auto;
+      gap: 0;
+    }
+
+    /* ── TOC SIDEBAR ── */
+    .toc {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      padding: 32px 20px;
+      font-size: 13px;
+    }
+    .toc-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .toc ul { list-style: none; }
+    .toc li + li { margin-top: 2px; }
+    .toc a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color .15s, background .15s;
+      line-height: 1.4;
+    }
+    .toc a:hover { color: var(--text); background: rgba(255,255,255,.05); }
+    .toc a.sub { padding-left: 18px; font-size: 12px; }
+    .toc a.sub2 { padding-left: 30px; font-size: 11px; }
+
+    /* ── CONTENT ── */
+    .content {
+      padding: 48px 40px 80px;
+      min-width: 0;
+    }
+
+    section { margin-bottom: 56px; }
+
+    h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2 .icon { font-size: 18px; }
+
+    h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 28px 0 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    h3::before {
+      content: '';
+      display: inline-block;
+      width: 3px; height: 14px;
+      background: var(--accent);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    h4 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin: 20px 0 8px;
+    }
+
+    p { margin-bottom: 12px; color: #c9d1d9; }
+    ul, ol { margin: 8px 0 14px 20px; color: #c9d1d9; }
+    li { margin-bottom: 4px; }
+    li::marker { color: var(--accent); }
+
+    /* ── CODE BLOCKS ── */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow-x: auto;
+      margin: 12px 0 20px;
+      position: relative;
+    }
+    pre .lang-tag {
+      position: absolute; top: 0; right: 0;
+      background: var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; letter-spacing: .06em;
+      color: var(--muted);
+      padding: 2px 8px;
+      border-bottom-left-radius: 4px;
+    }
+    pre code {
+      display: block;
+      padding: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.75;
+      color: #e6edf3;
+      white-space: pre;
+    }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      background: rgba(88,166,255,.1);
+      color: var(--accent);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    pre code { background: none; color: #e6edf3; padding: 0; }
+
+    /* Syntax highlights */
+    .cm { color: #8b949e; }   /* comment */
+    .kw { color: #ff7b72; }   /* keyword */
+    .fn { color: #79c0ff; }   /* function/cmdlet */
+    .st { color: #a5d6ff; }   /* string */
+    .op { color: #ffa657; }   /* operator/flag */
+    .nb { color: var(--accent2); } /* number/bool */
+
+    /* ── TABLES ── */
+    .table-wrap { overflow-x: auto; margin: 16px 0 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    thead { background: var(--surface2); }
+    th {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(48,54,61,.6);
+      color: #c9d1d9;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.025); }
+    td code { font-size: 11.5px; }
+
+    /* ── CALLOUTS ── */
+    .callout {
+      display: flex; gap: 12px;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin: 16px 0;
+      border-left: 3px solid;
+      font-size: 13.5px;
+    }
+    .callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .callout.info  { background: rgba(88,166,255,.07); border-color: var(--accent); }
+    .callout.warn  { background: rgba(240,136,62,.07);  border-color: var(--warn); }
+    .callout.ok    { background: rgba(63,185,80,.07);   border-color: var(--accent2); }
+    .callout.info .callout-label  { color: var(--accent); }
+    .callout.warn .callout-label  { color: var(--warn); }
+    .callout.ok   .callout-label  { color: var(--accent2); }
+    .callout-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase;
+      display: block; margin-bottom: 4px;
+    }
+
+    /* ── PHASE STEP ── */
+    .phase-header {
+      display: flex; align-items: center; gap: 10px;
+      margin: 32px 0 16px;
+    }
+    .phase-num {
+      background: var(--accent);
+      color: #000;
+      font-family: 'Syne', sans-serif;
+      font-size: 11px; font-weight: 800;
+      padding: 2px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .phase-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 17px; font-weight: 700;
+      color: #fff;
+    }
+
+    /* ── WIZARD TABLE ── */
+    .wizard-step { display: flex; gap: 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); margin: 12px 0; }
+    .wizard-label { background: var(--surface2); padding: 9px 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); min-width: 180px; border-right: 1px solid var(--border); }
+    .wizard-val   { padding: 9px 14px; font-size: 13.5px; color: #e6edf3; }
+
+    /* ── CHIP ── */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: var(--text);
+    }
+    .chip span { color: var(--muted); font-size: 11px; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 40px;
+      max-width: 1060px; margin: 0 auto;
+      color: var(--muted);
+      font-size: 13px;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 720px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { display: none; }
+      .content { padding: 28px 18px 60px; }
+      .hero { padding: 36px 18px 32px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="badge" data-icon="">SOC Analyst Training Series</div>
+    <h1>Windows 11 Firewall <span>&amp;</span> Network Protection</h1>
+    <div class="hero-sub">Hands-On Security Lab — Portfolio Project</div>
+    <div class="meta-strip">
+      <span data-icon="🖥">Windows 11 Pro · Dell Hardware</span>
+      <span data-icon="📅">March 21–22, 2026</span>
+      <span data-icon="🔧">wf.msc · PowerShell · Event Viewer</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR TOC -->
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-title">Contents</div>
+    <ul>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#env">Lab Environment</a></li>
+      <li><a href="#skills">Skills Demonstrated</a></li>
+      <li><a href="#phase1">Phase 1 — Baseline</a></li>
+      <li><a href="#phase2">Phase 2 — PowerShell Block</a></li>
+      <li><a href="#phase3">Phase 3 — Drop Logging</a></li>
+      <li><a href="#phase4">Phase 4 — Event Viewer</a></li>
+      <li><a href="#phase5">Phase 5 — Remediation</a></li>
+      <li><a href="#phase6">Phase 6 — GUI Block</a></li>
+      <li><a href="#phase7">Phase 7 — Rule Inspection</a></li>
+      <li><a href="#phase8">Phase 8 — Network Protection</a></li>
+      <li><a href="#phase9">Phase 9 — SmartScreen GUI</a></li>
+      <li><a href="#analysis">Analysis &amp; Findings</a></li>
+      <li><a href="#appendix">Appendix</a></li>
+    </ul>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <!-- OVERVIEW -->
+    <section id="overview">
+      <h2><span class="icon">📋</span> README — Project Overview</h2>
+      <p>This project documents a complete hands-on lab exercise covering Windows 11 firewall configuration and network protection. The lab was designed to build practical experience with the exact scenarios encountered by SOC analysts and system administrators when investigating reports of blocked or inaccessible websites.</p>
+
+      <h3>Objectives</h3>
+      <ul>
+        <li>Understand the difference between Windows Defender Firewall outbound rules and Windows Defender Network Protection (SmartScreen)</li>
+        <li>Create and manage firewall rules using both PowerShell and the <code>wf.msc</code> GUI</li>
+        <li>Observe and document the browser error messages produced by each type of block</li>
+        <li>Read and interpret firewall drop logs (<code>pfirewall.log</code>) and Event Viewer audit trails</li>
+        <li>Remediate firewall blocks and restore connectivity</li>
+        <li>Enable, test, and disable Network Protection (SmartScreen) in both Audit and Enforce modes</li>
+      </ul>
+    </section>
+
+    <!-- ENV -->
+    <section id="env">
+      <h2><span class="icon">🖥</span> Lab Environment</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Component</th><th>Details</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Platform</strong></td><td>Windows 11 Pro (Dell hardware)</td></tr>
+            <tr><td><strong>Browser</strong></td><td>Microsoft Edge (Chromium)</td></tr>
+            <tr><td><strong>Shell</strong></td><td>Windows PowerShell (Administrator)</td></tr>
+            <tr><td><strong>Firewall Console</strong></td><td><code>wf.msc</code> — Windows Defender Firewall with Advanced Security</td></tr>
+            <tr><td><strong>Security Console</strong></td><td>Windows Security (<code>windowsdefender://</code>)</td></tr>
+            <tr><td><strong>Test Target</strong></td><td><code>https://example.com</code> (IANA reserved domain)</td></tr>
+            <tr><td><strong>NP Test URL</strong></td><td><code>https://smartscreentestratings2.net</code> (Microsoft official test domain)</td></tr>
+            <tr><td><strong>Date Performed</strong></td><td>21–22 March 2026</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section id="skills">
+      <h2><span class="icon">🎯</span> Skills Demonstrated</h2>
+      <div class="chips">
+        <div class="chip">Resolve-DnsName <span>DNS resolution</span></div>
+        <div class="chip">New-NetFirewallRule <span>PS rule creation</span></div>
+        <div class="chip">wf.msc Wizard <span>GUI rule creation</span></div>
+        <div class="chip">pfirewall.log <span>drop log analysis</span></div>
+        <div class="chip">Event ID 2082 <span>audit trail</span></div>
+        <div class="chip">Remove-NetFirewallRule <span>remediation</span></div>
+        <div class="chip">Set-MpPreference <span>NP management</span></div>
+        <div class="chip">SmartScreen GUI <span>Windows Security</span></div>
+      </div>
+    </section>
+
+    <!-- ────────────────────────────────────────────────────────── -->
+    <section id="phase1">
+      <h2><span class="icon">🔍</span> Command Reference — All Phases</h2>
+      <p>All commands were run in Windows PowerShell (Administrator), presented in execution order with expected output noted.</p>
+
+      <div class="phase-header">
+        <span class="phase-num">PHASE 1</span>
+        <span class="phase-title">Baseline &amp; DNS Resolution</span>
+      </div>
+
+      <h3>Step 1.1 — Confirm target site loads</h3>
+      <p>Navigate to <code>https://example.com</code> in Edge. Confirm page loads before making any changes.</p>
+
+      <h3>Step 1.2 — Resolve DNS for target</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">Resolve-DnsName</span> example.com</code></pre>
+      <div class="callout warn">
+        <span class="callout-icon">⚠</span>
+        <div><span class="callout-label">Note</span>Expected output: 2× AAAA records (IPv6) and 2× A records (IPv4). Note all 4 IPs — you must block all of them or the browser will use an unblocked one.</div>
+      </div>
+      <p><em>Figure 1 — Resolve-DnsName showing 4 addresses for example.com</em></p>
+    </section>
+
+    <!-- PHASE 2 -->
+    <section id="phase2">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 2</span>
+        <span class="phase-title">Block via PowerShell</span>
+      </div>
+
+      <h3>Step 2.1 — Create outbound block rule</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">New-NetFirewallRule</span> <span class="op">-DisplayName</span> <span class="st">"LAB-Block-ExampleCom"</span> `
+  <span class="op">-Direction</span>     Outbound `
+  <span class="op">-Action</span>        Block `
+  <span class="op">-RemoteAddress</span> <span class="st">104.18.26.120,104.18.27.120,2606:4700::6812:1a78,2606:4700::6812:1b78</span> `
+  <span class="op">-Profile</span>       Any `
+  <span class="op">-Enabled</span>       True</code></pre>
+      <div class="callout info">
+        <span class="callout-icon">ℹ</span>
+        <div><span class="callout-label">Info</span>No output confirmation prompt. Rule is immediately active. All 4 IPs (both IPv4 and IPv6) must be included in a single rule.</div>
+      </div>
+      <p><em>Figure 2 — New-NetFirewallRule executed successfully, PrimaryStatus: OK</em></p>
+
+      <h3>Step 2.2 — Test connectivity (confirm block is active)</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">Test-NetConnection</span> <span class="op">-ComputerName</span> 104.18.26.120 <span class="op">-Port</span> 443</code></pre>
+      <div class="callout ok">
+        <span class="callout-icon">✅</span>
+        <div><span class="callout-label">Expected Result</span><code>TcpTestSucceeded : False</code> — confirms TCP connection is being dropped by the firewall.</div>
+      </div>
+      <p><em>Figure 3 — Browser showing ERR_NETWORK_ACCESS_DENIED after rule creation</em></p>
+    </section>
+
+    <!-- PHASE 3 -->
+    <section id="phase3">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 3</span>
+        <span class="phase-title">Enable Firewall Drop Logging</span>
+      </div>
+
+      <h3>Step 3.1 — Enable logging via netsh</h3>
+      <pre><span class="lang-tag">netsh</span><code>netsh advfirewall set allprofiles logging droppedconnections enable</code></pre>
+
+      <h3>Step 3.2 — Verify logging is active</h3>
+      <pre><span class="lang-tag">netsh</span><code>netsh advfirewall show allprofiles | findstr -i "log"</code></pre>
+      <div class="callout info">
+        <span class="callout-icon">ℹ</span>
+        <div><span class="callout-label">Info</span>Expected: <code>LogDroppedConnections: Enable</code> for all 3 profiles (Domain, Private, Public). Log path: <code>%systemroot%\system32\LogFiles\Firewall\pfirewall.log</code></div>
+      </div>
+      <p><em>Figure 4 — Logging enabled across all profiles via netsh</em></p>
+
+      <h3>Step 3.3 — Read the drop log</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">Get-Content</span> <span class="st">"$env:SystemRoot\system32\LogFiles\Firewall\pfirewall.log"</span> `
+  | <span class="fn">Select-Object</span> <span class="op">-Last</span> 20</code></pre>
+      <p><em>Figure 5 — pfirewall.log showing DROP entries for all 4 IPs on port 443</em></p>
+    </section>
+
+    <!-- PHASE 4 -->
+    <section id="phase4">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 4</span>
+        <span class="phase-title">Event Viewer Audit Trail</span>
+      </div>
+
+      <h3>Step 4.1 — Query firewall setting change events</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">Get-WinEvent</span> <span class="op">-LogName</span> <span class="st">"Microsoft-Windows-Windows Firewall With Advanced Security/Firewall"</span> `
+  <span class="op">-MaxEvents</span> 5 | <span class="fn">Format-List</span> TimeCreated, Id, Message</code></pre>
+      <p><em>Figure 6 — Event ID 2082 entries showing firewall setting changes with timestamps and tool used</em></p>
+      <div class="callout warn">
+        <span class="callout-icon">⚠</span>
+        <div><span class="callout-label">Note</span>Event ID 2082 records every firewall setting change. The log shows both <code>mmc.exe</code> (GUI) and <code>netsh.exe</code> changes with exact timestamps — key forensic evidence in a real investigation.</div>
+      </div>
+    </section>
+
+    <!-- PHASE 5 -->
+    <section id="phase5">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 5</span>
+        <span class="phase-title">Remediation (PowerShell)</span>
+      </div>
+
+      <h3>Step 5.1 — Remove the block rule</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">Remove-NetFirewallRule</span> <span class="op">-DisplayName</span> <span class="st">"LAB-Block-ExampleCom"</span></code></pre>
+
+      <h3>Step 5.2 — Verify rule is removed</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="cm"># Confirm rule is gone (returns nothing if removed)</span>
+<span class="fn">Get-NetFirewallRule</span> <span class="op">-DisplayName</span> <span class="st">"LAB-Block-ExampleCom"</span> <span class="op">-ErrorAction</span> SilentlyContinue
+
+<span class="cm"># Confirm connectivity restored</span>
+<span class="fn">Test-NetConnection</span> <span class="op">-ComputerName</span> 104.18.26.120 <span class="op">-Port</span> 443</code></pre>
+      <div class="callout ok">
+        <span class="callout-icon">✅</span>
+        <div><span class="callout-label">Expected Result</span>Get-NetFirewallRule returns nothing (rule gone). <code>TcpTestSucceeded : True</code> confirms connectivity restored.</div>
+      </div>
+      <p><em>Figure 7 — Rule removed, TcpTestSucceeded: True, connectivity confirmed</em></p>
+      <p><em>Figure 8 — example.com loads again in Edge after rule removal</em></p>
+    </section>
+
+    <!-- PHASE 6 -->
+    <section id="phase6">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 6</span>
+        <span class="phase-title">Block via GUI (wf.msc Wizard)</span>
+      </div>
+      <p>The same block was recreated using the Windows Defender Firewall GUI to build muscle memory for the interface.</p>
+
+      <h3>Step 6.1 — Open wf.msc</h3>
+      <p>Press <code>Win+R</code> → type <code>wf.msc</code> → Enter. Navigate to: <strong>Outbound Rules → right-click → New Rule…</strong></p>
+
+      <h3>Step 6.2 — GUI Wizard sequence</h3>
+      <div class="wizard-step"><div class="wizard-label">Rule Type</div><div class="wizard-val">Custom</div></div>
+      <div class="wizard-step"><div class="wizard-label">Program</div><div class="wizard-val">All programs</div></div>
+      <div class="wizard-step"><div class="wizard-label">Protocol &amp; Ports</div><div class="wizard-val">Any (leave default)</div></div>
+      <div class="wizard-step"><div class="wizard-label">Scope — Local</div><div class="wizard-val">Any IP address</div></div>
+      <div class="wizard-step"><div class="wizard-label">Scope — Remote</div><div class="wizard-val">These IP addresses → Add all 4 IPs</div></div>
+      <div class="wizard-step"><div class="wizard-label">Action</div><div class="wizard-val">Block the connection</div></div>
+      <div class="wizard-step"><div class="wizard-label">Profile</div><div class="wizard-val">Domain ✓  Private ✓  Public ✓</div></div>
+      <div class="wizard-step"><div class="wizard-label">Name</div><div class="wizard-val">LAB-Block-ExampleCom-GUI</div></div>
+
+      <p><em>Figure 9 — Rule Type: Custom selected</em></p>
+      <p><em>Figure 10 — Scope page: all 4 IPs entered under Remote IP addresses</em></p>
+      <p><em>Figure 11 — Profile page: all three profiles checked</em></p>
+      <p><em>Figure 12 — Rule created, visible in Outbound Rules list with red block icon</em></p>
+    </section>
+
+    <!-- PHASE 7 -->
+    <section id="phase7">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 7</span>
+        <span class="phase-title">Rule Inspection via GUI</span>
+      </div>
+
+      <h3>Step 7.1 — Inspect rule Properties</h3>
+      <p>Double-click the rule in <code>wf.msc</code> to open Properties. Review all tabs.</p>
+      <p><em>Figure 13 — General tab: Action = Block the connection, Enabled = checked</em></p>
+      <p><em>Figure 14 — Scope tab: all 4 IPs listed under Remote IP address</em></p>
+
+      <h3>Step 7.2 — Delete rule via GUI</h3>
+      <p><code>wf.msc</code> → Outbound Rules → right-click <strong>LAB-Block-ExampleCom-GUI</strong> → Delete → Yes</p>
+      <p><em>Figure 15 — Confirmation dialog before deleting rule</em></p>
+      <p><em>Figure 16 — Rule deleted, example.com loading in browser background</em></p>
+    </section>
+
+    <!-- PHASE 8 -->
+    <section id="phase8">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 8</span>
+        <span class="phase-title">Network Protection (SmartScreen)</span>
+      </div>
+
+      <h3>Step 8.1 — Check current state</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">Get-MpPreference</span> | <span class="fn">Select-Object</span> EnableNetworkProtection
+<span class="cm"># Returns: 0 (Disabled)  1 (Enabled)  2 (Audit Mode)</span></code></pre>
+      <p><em>Figure 17 — EnableNetworkProtection: 0 (Disabled by default)</em></p>
+
+      <h3>Step 8.2 — Enable Audit Mode (safe for testing)</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">Set-MpPreference</span> <span class="op">-EnableNetworkProtection</span> AuditMode
+<span class="fn">Get-MpPreference</span> | <span class="fn">Select-Object</span> EnableNetworkProtection
+<span class="cm"># Returns: 2</span></code></pre>
+
+      <h3>Step 8.3 — Enable full enforcement</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">Set-MpPreference</span> <span class="op">-EnableNetworkProtection</span> Enabled
+<span class="fn">Get-MpPreference</span> | <span class="fn">Select-Object</span> EnableNetworkProtection
+<span class="cm"># Returns: 1</span></code></pre>
+      <p><em>Figure 18 — Progression: 0 → AuditMode (2) → Enabled (1)</em></p>
+
+      <h3>Step 8.4 — Test with Microsoft's official NP test URL</h3>
+      <p>Navigate to: <code>https://smartscreentestratings2.net</code></p>
+      <p><em>Figure 19 — SmartScreen full red block page: "This site has been reported as unsafe"</em></p>
+
+      <h3>Step 8.5 — Restore original state</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="fn">Set-MpPreference</span> <span class="op">-EnableNetworkProtection</span> Disabled
+<span class="fn">Get-MpPreference</span> | <span class="fn">Select-Object</span> EnableNetworkProtection
+<span class="cm"># Returns: 0</span></code></pre>
+      <p><em>Figure 20 — Network Protection restored to Disabled (0)</em></p>
+    </section>
+
+    <!-- PHASE 9 -->
+    <section id="phase9">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 9</span>
+        <span class="phase-title">Network Protection via Windows Security GUI</span>
+      </div>
+
+      <h3>Step 9.1 — Navigate to SmartScreen settings</h3>
+      <p><strong>Windows Security → App &amp; browser control → Reputation-based protection settings</strong></p>
+      <p><em>Figure 21 — Reputation-based protection settings: Check apps and files, SmartScreen for Edge, Phishing protection</em></p>
+      <p><em>Figure 22 — Scrolled down: Potentially unwanted app blocking, SmartScreen for Microsoft Store apps</em></p>
+      <div class="callout info">
+        <span class="callout-icon">ℹ</span>
+        <div><span class="callout-label">Info</span>The "SmartScreen for Microsoft Edge" toggle is the GUI equivalent of the Network Protection test. The master <code>EnableNetworkProtection</code> toggle is only available via PowerShell or Group Policy in this Windows build.</div>
+      </div>
+    </section>
+
+    <!-- ANALYSIS -->
+    <section id="analysis">
+      <h2><span class="icon">🔬</span> Analysis &amp; Key Findings</h2>
+
+      <h3>Error Signature Comparison</h3>
+      <p>Understanding which error a user reports is the first triage step. The table below maps errors to their causes:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Browser Error</th><th>Cause</th><th>Behaviour</th></tr></thead>
+          <tbody>
+            <tr><td><code>ERR_NETWORK_ACCESS_DENIED</code></td><td>Firewall outbound rule block</td><td>Immediate — WFP intercepts at socket level before packet leaves machine</td></tr>
+            <tr><td><code>ERR_CONNECTION_TIMED_OUT</code></td><td>Firewall block (silent drop)</td><td>Slow ~30s — packet sent but silently discarded</td></tr>
+            <tr><td>Red SmartScreen page</td><td>Network Protection / SmartScreen</td><td>Instant — reputation check at DNS/URL layer</td></tr>
+            <tr><td><code>ERR_NAME_NOT_RESOLVED</code></td><td>DNS block or NXDOMAIN</td><td>Instant — domain not resolved at all</td></tr>
+            <tr><td><code>ERR_CONNECTION_REFUSED</code></td><td>Active port rejection</td><td>Instant — RST packet received</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Firewall vs Network Protection — Diagnostic Differences</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Property</th><th>Firewall Rule</th><th>Network Protection</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Block mechanism</strong></td><td>IP address (layer 3/4)</td><td>Domain reputation (layer 7/DNS)</td></tr>
+            <tr><td><strong>Configuration</strong></td><td><code>wf.msc</code> / <code>New-NetFirewallRule</code></td><td><code>Set-MpPreference</code> / Windows Security GUI</td></tr>
+            <tr><td><strong>Block speed</strong></td><td>Slow (timeout) or instant (WFP)</td><td>Always instant</td></tr>
+            <tr><td><strong>DNS resolution</strong></td><td>Succeeds (IP known, connection blocked)</td><td>Usually also blocked</td></tr>
+            <tr><td><strong>Log location</strong></td><td><code>pfirewall.log</code> + Event ID 5157</td><td>Defender Operational Event 1125/1126</td></tr>
+            <tr><td><strong>Bypass risk</strong></td><td>Browser tries all IPs — must block all</td><td>Domain-level, harder to bypass</td></tr>
+            <tr><td><strong>Fix</strong></td><td><code>Remove-NetFirewallRule</code> / GUI Delete</td><td>Whitelist URL or disable NP</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>SOC Analyst Triage Workflow</h3>
+      <p>When a user reports "website won't open", follow this diagnostic chain:</p>
+      <ol>
+        <li><strong>DNS check:</strong> <code>Resolve-DnsName &lt;domain&gt;</code> — does it resolve to an IP?</li>
+        <li><strong>TCP test:</strong> <code>Test-NetConnection -ComputerName &lt;IP&gt; -Port 443</code> — does <code>TcpTestSucceeded</code> return True or False?</li>
+        <li>If <code>False</code>: Check <code>pfirewall.log</code> for DROP entries to that IP on port 443</li>
+        <li>If DROP entries found: <code>Get-NetFirewallRule | Where-Object { $_.Action -eq 'Block' }</code> to find the blocking rule</li>
+        <li>Identify rule source (who created it, when) via Event ID 2082 in the Firewall event log</li>
+        <li>Remove rule if appropriate: <code>Remove-NetFirewallRule -DisplayName '&lt;name&gt;'</code></li>
+        <li>If browser shows red SmartScreen page instead: check Network Protection state and SmartScreen settings in Windows Security</li>
+      </ol>
+
+      <h3>Observations from Lab</h3>
+      <ul>
+        <li><strong>example.com returned 4 addresses</strong> (2 IPv4 + 2 IPv6). Blocking only the IPv4 addresses would have allowed the browser to connect via IPv6 — all addresses must be blocked simultaneously.</li>
+        <li>The <code>ERR_NETWORK_ACCESS_DENIED</code> error (vs the expected <code>ERR_CONNECTION_TIMED_OUT</code>) occurred because Edge attempted IPv6 first, which was blocked at the WFP layer before the TCP handshake could begin — producing an immediate rejection rather than a timeout.</li>
+        <li>Event ID 2082 recorded both GUI (<code>mmc.exe</code>) and command-line (<code>netsh.exe</code>) changes with precise timestamps — demonstrating the value of the firewall audit log for forensic reconstruction.</li>
+        <li>Network Protection (value=0) was disabled by default on this standalone Windows 11 machine — consistent with Microsoft's default configuration for non-enterprise deployments.</li>
+        <li>The GUI SmartScreen toggle (App &amp; browser control → Reputation-based protection) controls the Edge-level block. The master Network Protection setting requires PowerShell or Group Policy.</li>
+      </ul>
+    </section>
+
+    <!-- APPENDIX -->
+    <section id="appendix">
+      <h2><span class="icon">📎</span> Appendix — Quick Reference</h2>
+
+      <h3>All Commands at a Glance</h3>
+      <pre><span class="lang-tag">PowerShell</span><code><span class="cm"># ── DNS &amp; Connectivity ─────────────────────────────────────────</span>
+<span class="fn">Resolve-DnsName</span> example.com
+<span class="fn">Test-NetConnection</span> <span class="op">-ComputerName</span> 104.18.26.120 <span class="op">-Port</span> 443
+
+<span class="cm"># ── Create Firewall Block Rule ─────────────────────────────────</span>
+<span class="fn">New-NetFirewallRule</span> <span class="op">-DisplayName</span> <span class="st">"LAB-Block-ExampleCom"</span> `
+    <span class="op">-Direction</span> Outbound <span class="op">-Action</span> Block `
+    <span class="op">-RemoteAddress</span> <span class="st">104.18.26.120,104.18.27.120,2606:4700::6812:1a78,2606:4700::6812:1b78</span> `
+    <span class="op">-Profile</span> Any <span class="op">-Enabled</span> True
+
+<span class="cm"># ── Verify / Remove Rule ───────────────────────────────────────</span>
+<span class="fn">Get-NetFirewallRule</span> <span class="op">-DisplayName</span> <span class="st">"LAB-Block-ExampleCom"</span> <span class="op">-ErrorAction</span> SilentlyContinue
+<span class="fn">Remove-NetFirewallRule</span> <span class="op">-DisplayName</span> <span class="st">"LAB-Block-ExampleCom"</span>
+
+<span class="cm"># ── Enable Firewall Drop Logging ───────────────────────────────</span>
+netsh advfirewall set allprofiles logging droppedconnections enable
+netsh advfirewall show allprofiles | findstr -i "log"
+
+<span class="cm"># ── Read Drop Log ──────────────────────────────────────────────</span>
+<span class="fn">Get-Content</span> <span class="st">"$env:SystemRoot\system32\LogFiles\Firewall\pfirewall.log"</span> | <span class="fn">Select-Object</span> <span class="op">-Last</span> 30
+
+<span class="cm"># ── Event Viewer — Firewall Changes ───────────────────────────</span>
+<span class="fn">Get-WinEvent</span> <span class="op">-LogName</span> <span class="st">"Microsoft-Windows-Windows Firewall With Advanced Security/Firewall"</span> `
+    <span class="op">-MaxEvents</span> 10 | <span class="fn">Format-List</span> TimeCreated, Id, Message
+
+<span class="cm"># ── Network Protection ─────────────────────────────────────────</span>
+<span class="fn">Get-MpPreference</span> | <span class="fn">Select-Object</span> EnableNetworkProtection
+<span class="fn">Set-MpPreference</span> <span class="op">-EnableNetworkProtection</span> AuditMode   <span class="cm"># 2 = audit only</span>
+<span class="fn">Set-MpPreference</span> <span class="op">-EnableNetworkProtection</span> Enabled     <span class="cm"># 1 = block</span>
+<span class="fn">Set-MpPreference</span> <span class="op">-EnableNetworkProtection</span> Disabled    <span class="cm"># 0 = off</span>
+
+<span class="cm"># ── Enable Audit Logging for WFP Blocked Connections ──────────</span>
+auditpol /set /subcategory:<span class="st">"Filtering Platform Connection"</span> /failure:enable</code></pre>
+
+      <h3>Key Event IDs</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Event ID</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>2004</code></td><td>Firewall rule added</td></tr>
+            <tr><td><code>2006</code></td><td>Firewall rule deleted</td></tr>
+            <tr><td><code>2082</code></td><td>Firewall setting changed (logging, profile settings)</td></tr>
+            <tr><td><code>5152</code></td><td>WFP blocked a packet (requires audit policy enabled)</td></tr>
+            <tr><td><code>5157</code></td><td>WFP blocked a connection</td></tr>
+            <tr><td><code>1125</code></td><td>Network Protection blocked URL — Audit Mode</td></tr>
+            <tr><td><code>1126</code></td><td>Network Protection blocked URL — Enforcement Mode</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>GUI Navigation Paths</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tool</th><th>Path</th></tr></thead>
+          <tbody>
+            <tr><td><strong>wf.msc</strong></td><td>Win+R → <code>wf.msc</code> → Outbound Rules → New Rule</td></tr>
+            <tr><td><strong>Firewall logs</strong></td><td>wf.msc → top node → Properties → [Profile] tab → Logging → Customize</td></tr>
+            <tr><td><strong>Windows Security NP</strong></td><td>Windows Security → App &amp; browser control → Reputation-based protection settings</td></tr>
+            <tr><td><strong>Event Viewer</strong></td><td>eventvwr.msc → Apps &amp; Services → Microsoft → Windows → Windows Firewall → Firewall</td></tr>
+            <tr><td><strong>Audit Policy</strong></td><td>secpol.msc → Advanced Audit Policy → Object Access → Filtering Platform Connection</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <span>Windows 11 Firewall &amp; Network Protection Lab — SOC Analyst Training Series</span>
+  <span>Platform: Windows 11 Pro · March 21–22, 2026</span>
+</footer>
+
+</body>
+</html>
