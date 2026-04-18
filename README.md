@@ -7,7 +7,7 @@ This project documents a complete hands-on lab exercise covering Windows 11 fire
 ## Overview
 
 A complete practical exercise covering Windows Defender Firewall configuration and Network Protection (SmartScreen). The lab builds real diagnostic skills for investigating "website won't load" scenarios from a SOC analyst or sysadmin perspective.
-
+[View my HTML page] (https://arturskaufmanis.github.io/Windows-11-Firewall-and-Network-protection/)
 ## Lab Environment
 
 | Component | Details |
